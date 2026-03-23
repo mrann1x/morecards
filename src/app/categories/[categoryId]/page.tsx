@@ -7,6 +7,14 @@ import ImageUpload from "../../components/ImageUpload";
 
 const supabase = createClient();
 
+type Card = {
+  id: string;
+  text: string;
+  image_url: string;
+  order: number | null;
+  created_at?: string;
+};
+
 export default function CategoryPage({
   params,
 }: {
@@ -14,19 +22,29 @@ export default function CategoryPage({
 }) {
   const { categoryId } = use(params);
 
-  const [cards, setCards] = useState<any[]>([]);
+  const [cards, setCards] = useState<Card[]>([]);
   const [newText, setNewText] = useState("");
   const [newImage, setNewImage] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
 
   async function fetchCards() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("cards")
-      .select("*")
+      .select("id,text,image_url,order,created_at")
       .eq("category_id", categoryId)
+      .order("order", { ascending: true })
       .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      setCards([]);
+      return;
+    }
 
     setCards(data || []);
   }
@@ -41,10 +59,16 @@ export default function CategoryPage({
       return;
     }
 
+    const maxOrder = cards.reduce((max, card) => {
+      if (typeof card.order !== "number") return max;
+      return card.order > max ? card.order : max;
+    }, 0);
+
     const { error } = await supabase.from("cards").insert({
       text: newText,
       image_url: newImage,
       category_id: categoryId,
+      order: maxOrder + 1,
     });
 
     if (error) {
@@ -80,6 +104,73 @@ export default function CategoryPage({
     fetchCards();
   }
 
+  function reorderCards(list: Card[], fromId: string, toId: string) {
+    const fromIndex = list.findIndex((card) => card.id === fromId);
+    const toIndex = list.findIndex((card) => card.id === toId);
+
+    if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return list;
+
+    const next = [...list];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+
+    return next.map((card, index) => ({ ...card, order: index + 1 }));
+  }
+
+  async function persistOrder(next: Card[]) {
+    setSavingOrder(true);
+
+    const updates = next.map((card) => ({
+      id: card.id,
+      order: card.order ?? 0,
+      category_id: categoryId,
+    }));
+
+    const { error } = await supabase
+      .from("cards")
+      .upsert(updates, { onConflict: "id" });
+
+    if (error) {
+      console.error(error);
+      fetchCards();
+    }
+
+    setSavingOrder(false);
+  }
+
+  function handleDragStart(id: string, event: React.DragEvent<HTMLButtonElement>) {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", id);
+    setDraggingId(id);
+  }
+
+  function handleDragOver(id: string, event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    if (dragOverId !== id) setDragOverId(id);
+  }
+
+  function handleDrop(id: string, event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+
+    const sourceId = draggingId || event.dataTransfer.getData("text/plain");
+    if (!sourceId || sourceId === id) {
+      setDragOverId(null);
+      setDraggingId(null);
+      return;
+    }
+
+    const next = reorderCards(cards, sourceId, id);
+    setCards(next);
+    setDragOverId(null);
+    setDraggingId(null);
+    void persistOrder(next);
+  }
+
+  function handleDragEnd() {
+    setDragOverId(null);
+    setDraggingId(null);
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -111,15 +202,34 @@ export default function CategoryPage({
       </section>
 
       <section className="mt-[3%] space-y-3">
-        <div className="cards-subtitle">Cards</div>
+        <div className="flex items-center gap-3">
+          <div className="cards-subtitle">Cards</div>
+          {savingOrder && <div className="text-xs muted">Saving order...</div>}
+        </div>
 
         <div className="list-stack">
           {cards.map((card) => (
             <div
               key={card.id}
-              className="list-row flex-col sm:flex-row sm:items-center"
+              className={`list-row flex-col sm:flex-row sm:items-center ${
+                dragOverId === card.id && draggingId !== card.id
+                  ? "border-black/30 dark:border-white/30"
+                  : ""
+              }`}
+              onDragOver={(event) => handleDragOver(card.id, event)}
+              onDrop={(event) => handleDrop(card.id, event)}
             >
               <div className="flex items-center gap-4 min-w-0 flex-1">
+                <button
+                  type="button"
+                  className="text-xs font-semibold uppercase tracking-[0.22em] muted cursor-grab select-none"
+                  draggable={!savingOrder && editingId !== card.id}
+                  onDragStart={(event) => handleDragStart(card.id, event)}
+                  onDragEnd={handleDragEnd}
+                  aria-label="Drag to reorder"
+                >
+                  Drag
+                </button>
                 <img
                   src={card.image_url}
                   className="card-thumb rounded-xl object-cover border border-black/10 dark:border-white/10 shadow-sm shrink-0"

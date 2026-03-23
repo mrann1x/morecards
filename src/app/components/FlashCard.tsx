@@ -31,14 +31,18 @@ export default function FlashCard({ image, text }: any) {
         }`}
       >
         <div className="absolute w-full h-full backface-hidden">
-          <img
-            src={image}
+          <div
             className="
-              w-full h-full object-cover rounded-[2rem]
+              w-full h-full rounded-[2rem] overflow-hidden
               shadow-2xl shadow-black/15
               ring-1 ring-black/10 dark:ring-white/10
+              bg-black/90 dark:bg-black/80
+              flex items-center justify-center
+              p-6
             "
-          />
+          >
+            <img src={image} className="w-full h-full object-contain" />
+          </div>
         </div>
 
         <div

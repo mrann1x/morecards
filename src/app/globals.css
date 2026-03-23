@@ -21,6 +21,7 @@ body {
   --muted: 111 104 94;
   --accent: 13 148 136;
   --accent-2: 15 118 110;
+  --accent-fg: 0 0 0;
   --shadow-soft: 0 14px 28px rgba(21, 23, 28, 0.06);
   --shadow-strong: 0 22px 48px rgba(21, 23, 28, 0.10);
 }
@@ -34,6 +35,7 @@ body {
   --muted: 159 164 175;
   --accent: 45 212 191;
   --accent-2: 20 184 166;
+  --accent-fg: 255 255 255;
   --shadow-soft: 0 18px 34px rgba(0, 0, 0, 0.24);
   --shadow-strong: 0 24px 52px rgba(0, 0, 0, 0.30);
 }
@@ -145,19 +147,21 @@ button {
 }
 
 .category-grid {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.95rem;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 190px));
-  justify-content: start;
+  align-items: stretch;
 }
 
 .category-tile {
-  aspect-ratio: 1 / 1;
-  min-height: 9.75rem;
-  padding: 0.95rem;
+  width: max-content;
+  max-width: 100%;
+  min-width: 12rem;
+  padding: 0.95rem 1.1rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  flex: 0 0 auto;
   transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
 }
 
@@ -205,7 +209,7 @@ button {
 
 .btn-primary {
   background: linear-gradient(180deg, rgba(var(--accent), 1), rgba(var(--accent-2), 1));
-  color: white;
+  color: rgb(var(--fg));
   box-shadow: 0 14px 28px rgba(var(--accent), 0.22);
 }
 

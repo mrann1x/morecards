@@ -11,6 +11,7 @@ type Card = {
   id: string;
   text: string;
   image_url: string;
+  order: number | null;
 };
 
 export default function Cards({
@@ -30,8 +31,9 @@ export default function Cards({
 
       const { data, error } = await supabase
         .from("cards")
-        .select("*")
+        .select("id,text,image_url,order,created_at")
         .eq("category_id", categoryId)
+        .order("order", { ascending: true })
         .order("created_at", { ascending: true });
 
       if (error) {
