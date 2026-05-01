@@ -123,13 +123,25 @@ export default function CategoryBrowser({
   const parentId = getParentId(current)
   const backHref = parentId ? `/category/${parentId}` : "/"
 
+  const currentCardCount = cardCounts.get(current.id) ?? 0
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">{current.name}</h1>
-        <p className="muted mt-2">
-          Choose a subcategory. If there are no subcategories, you will go straight to cards.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">{current.name}</h1>
+          <p className="muted mt-2">
+            Browse subcategories, or open cards for this category directly.
+          </p>
+        </div>
+        {currentCardCount > 0 && (
+          <Link
+            href={`/cards/${categoryId}`}
+            className="inline-flex btn btn-primary py-2 px-4 text-sm w-fit"
+          >
+            View cards
+          </Link>
+        )}
       </div>
 
       {visibleChildren.length === 0 && (
@@ -142,21 +154,40 @@ export default function CategoryBrowser({
         {visibleChildren.map((child) => {
           const subCount = childCounts.get(child.id) ?? 0
           const cardCount = cardCounts.get(child.id) ?? 0
-          const subtitle = subCount > 0
+          const hasChildren = subCount > 0
+          const subtitle = hasChildren
             ? formatCount(subCount, "subcategory", "subcategories")
             : formatCount(cardCount, "card", "cards")
 
           return (
-            <Link
-              key={child.id}
-              href={`/category/${child.id}`}
-              className="card category-tile"
-            >
-              <div className="min-w-0">
-                <h2 className="text-lg font-semibold tracking-tight">{child.name}</h2>
+            <div key={child.id} className="card category-tile p-4">
+              <div className="space-y-3">
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold tracking-tight">{child.name}</h2>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-sm font-medium muted">{subtitle}</span>
+                  <div className="flex flex-wrap gap-2">
+                    {hasChildren && (
+                      <Link
+                        href={`/category/${child.id}`}
+                        className="inline-flex btn btn-ghost py-2 px-3 text-sm"
+                      >
+                        Browse subcategory
+                      </Link>
+                    )}
+                    {cardCount > 0 && (
+                      <Link
+                        href={`/cards/${child.id}`}
+                        className="inline-flex btn btn-primary py-2 px-3 text-sm"
+                      >
+                        {hasChildren ? "View cards" : "Open cards"}
+                      </Link>
+                    )}
+                  </div>
+                </div>
               </div>
-              <span className="text-sm font-medium muted">{subtitle}</span>
-            </Link>
+            </div>
           )
         })}
       </div>
