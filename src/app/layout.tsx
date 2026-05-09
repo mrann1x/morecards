@@ -45,6 +45,9 @@ export default function RootLayout({
                   <Link href="/categories" className="nav-link">
                     Categories
                   </Link>
+                  <Link href="/test" className="nav-link">
+                    Test
+                  </Link>
                 </nav>
 
                 <ThemeToggle />
