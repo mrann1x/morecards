@@ -58,6 +58,10 @@ export default function Cards({
     if (index > 0) setIndex((i) => i - 1);
   };
 
+  const goToStart = () => {
+    if (index > 0) setIndex(0);
+  };
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -95,6 +99,9 @@ export default function Cards({
           <div className="study-nav">
             <button onClick={prev} disabled={index === 0} className="study-action">
               Previous
+            </button>
+            <button onClick={goToStart} disabled={index === 0} className="study-action">
+              Start
             </button>
             <button
               onClick={next}
